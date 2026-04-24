@@ -26,7 +26,7 @@ const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || true
 const MODEL_MAPPING = {
   // Premium Reasoning Models (Best for Roleplay & Complex Conversations)
   'gpt-4': 'deepseek-ai/deepseek-v3.2',                                    // State-of-the-art 685B reasoning LLM
-  'gpt-4-turbo': 'deepseek-ai/deepseek-v4-flash',                              // Hybrid thinking mode, 128K context
+  'gpt-4-turbo': 'deepseek-ai/deepseek-v4-pro',                              // Hybrid thinking mode, 128K context
   'gpt-4o': 'deepseek-ai/deepseek-v3.1-terminus',                          // Improved stability & agent behavior
   'claude-opus': 'nvidia/llama-3.1-nemotron-ultra-253b-v1',                // Highest accuracy, complex reasoning
   'claude-sonnet': 'nvidia/llama-3.3-nemotron-super-49b-v1.5',             // Great accuracy-efficiency balance
