@@ -19,7 +19,7 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 const SHOW_REASONING = process.env.SHOW_REASONING === 'true' || false;
 
 // 🔥 THINKING MODE TOGGLE - Enables thinking for specific models that support it
-const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || false;
+const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || true;
 
 // 🎯 OPTIMIZED MODEL MAPPING FOR JANITOR AI
 // Best models from NVIDIA NIM API (January 2025)
@@ -32,7 +32,7 @@ const MODEL_MAPPING = {
   'claude-sonnet': 'nvidia/llama-3.3-nemotron-super-49b-v1.5',             // Great accuracy-efficiency balance
   
   // Fast & Efficient Models (Balanced Performance)
-  'gpt-3.5-turbo': 'nvidia/llama-3.1-nemotron-nano-8b-v1',                 // Fast, efficient, good quality
+  'gpt-3.5-turbo': 'deepseek-ai/deepseek-v4-flash',                 // Fast, efficient, good quality
   'gpt-3.5-turbo-16k': 'nvidia/nvidia-nemotron-nano-9b-v2',                // Hybrid Mamba-Transformer, 128K context
   'claude-haiku': 'nvidia/nemotron-3-nano-30b-a3b',                        // Best-in-class throughput, 1M tokens
   
