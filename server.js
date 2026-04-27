@@ -29,7 +29,7 @@ const MODEL_MAPPING = {
   'gpt-4-turbo': 'deepseek-ai/deepseek-v4-pro',                              // Hybrid thinking mode, 128K context
   'gpt-4o': 'deepseek-ai/deepseek-v3.1-terminus',                          // Improved stability & agent behavior
   'claude-opus': 'nvidia/llama-3.1-nemotron-ultra-253b-v1',                // Highest accuracy, complex reasoning
-  'claude-sonnet': 'nvidia/llama-3.3-nemotron-super-49b-v1.5',             // Great accuracy-efficiency balance
+  'claude-sonnet': 'z-ai/glm4.7',             // Great accuracy-efficiency balance
   
   // Fast & Efficient Models (Balanced Performance)
   'gpt-3.5-turbo': 'deepseek-ai/deepseek-v4-flash',                 // Fast, efficient, good quality
