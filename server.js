@@ -19,7 +19,7 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 const SHOW_REASONING = process.env.SHOW_REASONING === 'true' || false;
 
 // 🔥 THINKING MODE TOGGLE - Enables thinking for specific models that support it
-const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || false;
+const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || true;
 
 // 🎯 OPTIMIZED MODEL MAPPING FOR JANITOR AI
 // Best models from NVIDIA NIM API (January 2025)
