@@ -34,7 +34,7 @@ const MODEL_MAPPING = {
   // Fast & Efficient Models (Balanced Performance)
   'gpt-3.5-turbo': 'deepseek-ai/deepseek-v4-flash',                 // Fast, efficient, good quality
   'gpt-3.5-turbo-16k': 'nvidia/nvidia-nemotron-nano-9b-v2',                // Hybrid Mamba-Transformer, 128K context
-  'claude-haiku': 'nvidia/nemotron-3-nano-30b-a3b',                        // Best-in-class throughput, 1M tokens
+  'claude-haiku': 'minimaxai/minimax-m2',                        // Best-in-class throughput, 1M tokens
   
   // Specialized Models
   'gemini-pro': 'qwen/qwen3-next-80b-a3b-thinking',                        // Hybrid attention, ultra-long context
