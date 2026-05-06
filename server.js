@@ -27,7 +27,7 @@ const MODEL_MAPPING = {
   // Premium Reasoning Models (Best for Roleplay & Complex Conversations)
   'gpt-4': 'deepseek-ai/deepseek-v3.2',                                    // State-of-the-art 685B reasoning LLM
   'gpt-4-turbo': 'deepseek-ai/deepseek-v4-pro',                              // Hybrid thinking mode, 128K context
-  'gpt-4o': 'z-ai/glm4.7',                          // Improved stability & agent behavior
+  'gpt-4o': 'mistralai/mistral-large-3-675b-instruct-2512',                          // Improved stability & agent behavior
   'claude-opus': 'nvidia/llama-3.1-nemotron-ultra-253b-v1',                // Highest accuracy, complex reasoning
   'claude-sonnet': 'kimi-k2-instruct-0905',             // Great accuracy-efficiency balance
   
