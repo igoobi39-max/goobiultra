@@ -53,7 +53,7 @@ const MODEL_MAPPING = {
 
   // --- OpenAI OSS (via NIM) ---
   'claude-3-opus':   'openai/gpt-oss-120b',
-  'claude-3-sonnet': 'openai/gpt-oss-20b',
+  'claude-3-sonnet': 'stepfun-ai/step-3.5-flash',
 };
 
 // 🛡️ ROLEPLAY GUARD - Injected into every request to prevent the model from speaking as the user
