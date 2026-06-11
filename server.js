@@ -274,7 +274,7 @@ app.get('/v1/memory', (req, res) => {
 });
 
 app.delete('/v1/memory', (req, res) => {
-  const count = Object.keys(memoryStore).length;       // ✅ Correct
+const count = Object.keys(memoryStore).length;       // ✅ Correct
   for (const key in memoryStore) delete memoryStore[key];
   res.json({ message: `Cleared ${count} chat memories`, status: 'ok' });
 });
@@ -399,8 +399,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     
     finalMessages.push(...messagesToSend);
 
-    const nimRequest = {
-  model: nimModel,           // ✅ Correct
+const nimRequest = {
+  model: nimModel,
   messages: finalMessages,
       temperature: temperature || 0.7,
       max_tokens: max_tokens || 12000,
@@ -596,7 +596,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('═══════════════════════════════════════════════════════');
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📋 Models list: http://localhost:${PORT}/v1/models');
+  console.log(`📋 Models list: http://localhost:${PORT}/v1/models`);
   console.log('');
   console.log('⚙️  Configuration:');
   console.log(`   • Reasoning display: ${SHOW_REASONING ? '✅ ENABLED' : '❌ DISABLED'}`);
