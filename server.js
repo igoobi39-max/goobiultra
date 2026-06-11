@@ -1,6 +1,4 @@
 // server.js - OpenAI to NVIDIA NIM API Proxy (Optimized for Janitor AI)
-// Includes: Short-term/Long-term Memory Summary System
-
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -17,26 +15,13 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }));
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
-// 🔥 REASONING DISPLAY TOGGLE - Shows/hides reasoning in output
+// ðŸ”¥ REASONING DISPLAY TOGGLE - Shows/hides reasoning in output
 const SHOW_REASONING = process.env.SHOW_REASONING === 'true' || false;
 
-// 🔥 THINKING MODE TOGGLE - Enables thinking for specific models that support it
+// ðŸ”¥ THINKING MODE TOGGLE - Enables thinking for specific models that support it
 const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || false;
 
-// ═══════════════════════════════════════════════════════
-// 🧠 MEMORY SYSTEM CONFIGURATION
-// ═══════════════════════════════════════════════════════
-const ENABLE_MEMORY = process.env.ENABLE_MEMORY !== 'false'; // On by default
-const SHORT_TERM_LIMIT = parseInt(process.env.SHORT_TERM_LIMIT) || 30; // Keep last N messages verbatim
-const SUMMARY_TRIGGER = parseInt(process.env.SUMMARY_TRIGGER) || 40; // Summarize when count exceeds this
-const SUMMARY_MODEL = process.env.SUMMARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl'; // Fast model for summaries
-const MEMORY_TTL = parseInt(process.env.MEMORY_TTL) || 86400000; // 24h — prune stale chats
-const MEMORY_CLEANUP_INTERVAL = parseInt(process.env.MEMORY_CLEANUP_INTERVAL) || 3600000; // Check every hour
-
-// 🧠 IN-MEMORY STORE — persists for the life of the server process
-const memoryStore = {};
-
-// 🎯 MODEL MAPPING — verified against build.nvidia.com/models (May 2025)
+// ðŸŽ¯ MODEL MAPPING â€” verified against build.nvidia.com/models (May 2025)
 const MODEL_MAPPING = {
   // --- DeepSeek (confirmed live on NIM) ---
   'deepseek-v4-pro':   'deepseek-ai/deepseek-v4-pro',    // 1M ctx, flagship MoE
@@ -71,7 +56,7 @@ const MODEL_MAPPING = {
   'claude-3-sonnet': 'stepfun-ai/step-3.5-flash',
 };
 
-// 🛡️ ROLEPLAY GUARD - Injected into every request to prevent the model from speaking as the user
+// ðŸ›¡ï¸ ROLEPLAY GUARD - Injected into every request to prevent the model from speaking as the user
 const RP_GUARD_INSTRUCTION = `You are ONLY the character described in the system prompt or conversation. Follow these rules strictly:
 - You ONLY speak, act, and think as the character. You do NEVER write or generate any dialogue, actions, or thoughts for the user or any other character that the user is playing.
 - Do NOT use labels like "User:", "Human:", "You:" or any prefix to simulate the user's side of the conversation.
@@ -79,16 +64,16 @@ const RP_GUARD_INSTRUCTION = `You are ONLY the character described in the system
 - Stop your response immediately after your character's turn ends.
 - If you feel the scene needs a reaction from the user, end your response and wait.`;
 
-// 🛡️ ROLEPLAY GUARD - Strips any text where the model broke character and started writing as the user
+// ðŸ›¡ï¸ ROLEPLAY GUARD - Strips any text where the model broke character and started writing as the user
 function stripUserBreakout(text) {
   const lines = text.split('\n');
   const cleaned = [];
   let dropping = false;
 
   const userLabels = [
-    /^(User|Human|You|Me|Player)\s*[:：]/i,
+    /^(User|Human|You|Me|Player)\s*[:ï¼š]/i,
     /^---+\s*$/,
-    /^\*{0,3}\s*(User|Human|You|Me|Player)\s*\*{0,3}\s*[:：]/i
+    /^\*{0,3}\s*(User|Human|You|Me|Player)\s*\*{0,3}\s*[:ï¼š]/i
   ];
 
   for (const line of lines) {
@@ -112,7 +97,7 @@ function stripUserBreakout(text) {
   }
 
   const result = cleaned.join('\n');
-  const lastUserLabel = result.search(/\n(?:User|Human|You|Me|Player)\s*[:：]/i);
+  const lastUserLabel = result.search(/\n(?:User|Human|You|Me|Player)\s*[:ï¼š]/i);
   if (lastUserLabel !== -1) {
     return result.substring(0, lastUserLabel).trimEnd();
   }
@@ -120,7 +105,7 @@ function stripUserBreakout(text) {
   return result.trimEnd();
 }
 
-// 🎨 THINKING-CAPABLE MODELS
+// ðŸŽ¨ THINKING-CAPABLE MODELS
 const THINKING_MODELS = [
   'deepseek-ai/deepseek-v4-pro',
   'deepseek-ai/deepseek-v4-flash',
@@ -133,89 +118,13 @@ const THINKING_MODELS = [
   'minimaxai/minimax-m2.7',
 ];
 
-// ═══════════════════════════════════════════════════════
-// 🧠 MEMORY SYSTEM — Helper Functions
-// ═══════════════════════════════════════════════════════
-
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return 'chat_' + Math.abs(hash).toString(36);
-}
-
-function getChatId(messages) {
-  const sysMsg = messages.find(m => m.role === 'system');
-  const firstUserMsg = messages.find(m => m.role === 'user');
-  return simpleHash(
-    (sysMsg?.content || '') + '::' + (firstUserMsg?.content?.substring(0, 500) || '')
-  );
-}
-
-async function summarizeMessages(existingSummary, oldMessages) {
-  const conversationText = oldMessages
-    .map(m => {
-      const label = m.role === 'assistant' ? 'Character' : m.role === 'user' ? 'User' : m.role;
-      return `${label}: ${m.content}`;
-    })
-    .join('\n');
-
-  const summaryPrompt = existingSummary
-    ? `Here is the existing conversation summary:\n---\n${existingSummary}\n---\n\nHere are new messages to incorporate into the summary:\n---\n${conversationText}\n---\n\nUpdate the summary to include the new messages. Keep it concise but preserve ALL important details: plot points, character developments, relationships, emotional states, locations, items, ongoing situations, and anything the characters would remember. Do not add information that wasn't in the messages.`
-    : `Summarize the following roleplay conversation, preserving ALL important details: plot points, character developments, relationships, emotional states, locations, items, key dialogue, and ongoing situations. Do not add information that wasn't in the conversation.\n\n---\n${conversationText}\n---\n\nWrite a concise but comprehensive summary:`;
-
-  try {
-    const response = await axios.post(`${NIM_API_BASE}/chat/completions`, {
-      model: SUMMARY_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a conversation summarizer for roleplay chats. Create concise summaries that preserve all important details, plot points, character developments, relationship dynamics, and key events. Never invent new information. Write in third person.' },
-        { role: 'user', content: summaryPrompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 1500
-    }, {
-      headers: {
-        'Authorization': `Bearer ${NIM_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const newSummary = response.data.choices?.[0]?.message?.content;
-    if (newSummary && newSummary.trim().length > 0) {
-      return newSummary.trim();
-    }
-    return existingSummary || 'Previous conversation occurred.';
-  } catch (error) {
-    console.error('🧠 Summarization API error:', error.message);
-    return existingSummary || 'Previous conversation occurred but summary generation failed.';
-  }
-}
-
-// Periodically prune stale chat memories
-setInterval(() => {
-  const now = Date.now();
-  let cleaned = 0;
-  for (const chatId in memoryStore) {
-    if (now - memoryStore[chatId].lastUpdated > MEMORY_TTL) {
-      delete memoryStore[chatId];
-      cleaned++;
-    }
-  }
-  if (cleaned > 0) console.log(`🧠 Memory cleanup: removed ${cleaned} stale chat(s)`);
-}, MEMORY_CLEANUP_INTERVAL);
-
 // Health check endpoint
 app.get('/health', (req, res) => {
-  const activeChats = Object.keys(memoryStore).length;
   res.json({ 
     status: 'ok', 
     service: 'OpenAI to NVIDIA NIM Proxy (Janitor AI Optimized)', 
     reasoning_display: SHOW_REASONING,
     thinking_mode: ENABLE_THINKING_MODE,
-    memory_enabled: ENABLE_MEMORY,
-    memory_stats: { active_chats: activeChats, short_term_limit: SHORT_TERM_LIMIT, summary_trigger: SUMMARY_TRIGGER },
     nim_api_configured: !!NIM_API_KEY,
     available_models: Object.keys(MODEL_MAPPING).length,
     optimized_for: 'Janitor AI'
@@ -226,20 +135,18 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     service: 'OpenAI to NVIDIA NIM Proxy',
-    version: '2.0-memory',
+    version: '2.0',
     optimized_for: 'Janitor AI',
     status: 'running',
-    memory: ENABLE_MEMORY ? 'enabled' : 'disabled',
     endpoints: {
       health: '/health',
       models: '/v1/models',
-      chat: '/v1/chat/completions',
-      memory: '/v1/memory'
+      chat: '/v1/chat/completions'
     },
     featured_models: {
-      best_quality: 'gpt-4 → deepseek-v4-pro (1M ctx)',
-      balanced: 'gpt-4o → deepseek-v4-flash (fast MoE)',
-      fastest: 'mistral-medium → mistral-medium-3.5 (free)'
+      best_quality: 'gpt-4 â†’ deepseek-v4-pro (1M ctx)',
+      balanced: 'gpt-4o â†’ deepseek-v4-flash (fast MoE)',
+      fastest: 'mistral-medium â†’ mistral-medium-3.5 (free)'
     }
   });
 });
@@ -259,34 +166,6 @@ app.get('/v1/models', (req, res) => {
     object: 'list',
     data: models
   });
-});
-
-// 🧠 Memory Management Endpoints
-app.get('/v1/memory', (req, res) => {
-  const chats = Object.entries(memoryStore).map(([id, data]) => ({
-    chatId: id,
-    hasSummary: !!data.summary,
-    summaryLength: data.summary?.length || 0,
-    messagesSummarized: data.lastSummarizedIndex,
-    lastUpdated: new Date(data.lastUpdated).toISOString()
-  }));
-  res.json({ enabled: ENABLE_MEMORY, activeChats: chats.length, chats });
-});
-
-app.delete('/v1/memory', (req, res) => {
-const count = Object.keys(memoryStore).length;       // ✅ Correct
-  for (const key in memoryStore) delete memoryStore[key];
-  res.json({ message: `Cleared ${count} chat memories`, status: 'ok' });
-});
-
-app.delete('/v1/memory/:chatId', (req, res) => {
-  const { chatId } = req.params;
-  if (memoryStore[chatId]) {
-    delete memoryStore[chatId];
-    res.json({ message: `Cleared memory for chat ${chatId}`, status: 'ok' });
-  } else {
-    res.status(404).json({ error: { message: `Chat ID "${chatId}" not found`,} });
-  }
 });
 
 // Chat completions endpoint (main proxy)
@@ -339,69 +218,20 @@ app.post('/v1/chat/completions', async (req, res) => {
       }
     }
     
-    // ──────────────────────────────────────────────
-    // 🧠 MEMORY SYSTEM — Build final message array
-    // ──────────────────────────────────────────────
-    const originalSystemMsgs = messages.filter(m => m.role === 'system');
-    const nonSystemMsgs = messages.filter(m => m.role !== 'system');
-    
-    let finalMessages = [];
-    let messagesToSend = nonSystemMsgs;
-    let chatMemory = null;
-    let chatId = null;
-    
-    if (ENABLE_MEMORY && nonSystemMsgs.length > 0) {
-      chatId = getChatId(messages);
-      
-      if (!memoryStore[chatId]) {
-        memoryStore[chatId] = { summary: '', lastSummarizedIndex: 0, lastUpdated: Date.now() };
-        console.log(`🧠 New chat registered: ${chatId}`);
-      }
-      
-      chatMemory = memoryStore[chatId];
-      chatMemory.lastUpdated = Date.now();
-      
-      // Check if we need to summarize new old messages
-      if (nonSystemMsgs.length > SUMMARY_TRIGGER && chatMemory.lastSummarizedIndex < nonSystemMsgs.length - SHORT_TERM_LIMIT) {
-        const startIndex = chatMemory.lastSummarizedIndex;
-        const endIndex = nonSystemMsgs.length - SHORT_TERM_LIMIT;
-        const messagesToSummarize = nonSystemMsgs.slice(startIndex, endIndex);
-        
-        if (messagesToSummarize.length > 0) {
-          console.log(`🧠 Summarizing ${messagesToSummarize.length} messages for chat ${chatId}`);
-          chatMemory.summary = await summarizeMessages(chatMemory.summary, messagesToSummarize);
-          chatMemory.lastSummarizedIndex = endIndex;
-        }
-      }
-      
-      // Trim to recent messages if we have a summary
-      if (chatMemory.summary && nonSystemMsgs.length > SHORT_TERM_LIMIT) {
-        messagesToSend = nonSystemMsgs.slice(-SHORT_TERM_LIMIT);
-        console.log(`🧠 Chat ${chatId}: sending summary + ${messagesToSend.length} recent messages`);
-      }
-    }
-    
-    // Build system messages with RP guard (non-destructive)
-    if (originalSystemMsgs.length > 0) {
-      const combinedSystem = originalSystemMsgs.map(m => m.content).join('\n\n');
-      finalMessages.push({ role: 'system', content: combinedSystem + '\n\n' + RP_GUARD_INSTRUCTION });
+    // ðŸ›¡ï¸ ROLEPLAY GUARD - Inject character-only instruction
+    const systemIndex = messages.findIndex(m => m.role === 'system');
+    if (systemIndex !== -1) {
+      messages[systemIndex] = {
+        ...messages[systemIndex],
+        content: messages[systemIndex].content + '\n\n' + RP_GUARD_INSTRUCTION
+      };
     } else {
-      finalMessages.push({ role: 'system', content: RP_GUARD_INSTRUCTION });
+      messages.unshift({ role: 'system', content: RP_GUARD_INSTRUCTION });
     }
-    
-    // Inject summary if available
-    if (chatMemory?.summary && nonSystemMsgs.length > SHORT_TERM_LIMIT) {
-      finalMessages.push({
-        role: 'system',
-        content: `[📝 Conversation Memory — Important events from earlier in this conversation]\n${chatMemory.summary}\n[End of memory summary. The messages below continue from this point.]`
-      });
-    }
-    
-    finalMessages.push(...messagesToSend);
 
-const nimRequest = {
-  model: nimModel,
-  messages: finalMessages,
+    const nimRequest = {
+      model: nimModel,
+      messages: messages,
       temperature: temperature || 0.7,
       max_tokens: max_tokens || 12000,
       stream: stream || false
@@ -456,7 +286,7 @@ const nimRequest = {
                   res.write(`data: ${JSON.stringify(doneFlush)}\n\n`);
                 }
               }
-              res.write('data: [DONE]\n\n');
+              res.write(line + '\n\n');
               return;
             }
             
@@ -470,14 +300,14 @@ const nimRequest = {
                   let combinedContent = '';
                   
                   if (reasoning && !reasoningStarted) {
-                    combinedContent = '<tool_call>\n' + reasoning;
+                    combinedContent = '<think>\n' + reasoning;
                     reasoningStarted = true;
                   } else if (reasoning) {
                     combinedContent = reasoning;
                   }
                   
                   if (content && reasoningStarted) {
-                    combinedContent += '\n---</summary>\n\n' + content;
+                    combinedContent += '\n</think>\n\n' + content;
                     reasoningStarted = false;
                   } else if (content) {
                     combinedContent += content;
@@ -535,7 +365,7 @@ const nimRequest = {
           fullContent = stripUserBreakout(fullContent);
           
           if (SHOW_REASONING && choice.message?.reasoning_content) {
-            fullContent = '<tool_call>\n' + choice.message.reasoning_content + '\n---</summary>\n\n' + fullContent;
+            fullContent = '<think>\n' + choice.message.reasoning_content + '\n</think>\n\n' + fullContent;
           }
           
           return {
@@ -583,7 +413,7 @@ const nimRequest = {
 app.all('*', (req, res) => {
   res.status(404).json({
     error: {
-      message: `Endpoint ${req.path} not found. Available endpoints: /health, /v1/models, /v1/chat/completions, /v1/memory`,
+      message: `Endpoint ${req.path} not found. Available endpoints: /health, /v1/models, /v1/chat/completions`,
       type: 'invalid_request_error',
       code: 404
     }
@@ -591,27 +421,21 @@ app.all('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('🚀 OpenAI → NVIDIA NIM Proxy (Janitor AI Optimized)');
-  console.log('═══════════════════════════════════════════════════════');
-  console.log(`📡 Server running on port ${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📋 Models list: http://localhost:${PORT}/v1/models`);
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+  console.log('ðŸš€ OpenAI â†’ NVIDIA NIM Proxy (Janitor AI Optimized)');
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+  console.log(`ðŸ“¡ Server running on port ${PORT}`);
+  console.log(`ðŸ¥ Health check: http://localhost:${PORT}/health`);
+  console.log(`ðŸ“‹ Models list: http://localhost:${PORT}/v1/models`);
   console.log('');
-  console.log('⚙️  Configuration:');
-  console.log(`   • Reasoning display: ${SHOW_REASONING ? '✅ ENABLED' : '❌ DISABLED'}`);
-  console.log(`   • Thinking mode: ${ENABLE_THINKING_MODE ? '✅ ENABLED' : '❌ DISABLED'}`);
-  console.log(`   • Memory system: ${ENABLE_MEMORY ? '✅ ENABLED' : '❌ DISABLED'}`);
-  if (ENABLE_MEMORY) {
-    console.log(`   • Short-term limit: ${SHORT_TERM_LIMIT} messages`);
-    console.log(`   • Summary trigger: ${SUMMARY_TRIGGER} messages`);
-    console.log(`   • Summary model: ${SUMMARY_MODEL}`);
-  }
-  console.log(`   • API key: ${NIM_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+  console.log('âš™ï¸  Configuration:');
+  console.log(`   â€¢ Reasoning display: ${SHOW_REASONING ? 'âœ… ENABLED' : 'âŒ DISABLED'}`);
+  console.log(`   â€¢ Thinking mode: ${ENABLE_THINKING_MODE ? 'âœ… ENABLED' : 'âŒ DISABLED'}`);
+  console.log(`   â€¢ API key: ${NIM_API_KEY ? 'âœ… Configured' : 'âŒ Missing'}`);
   console.log('');
-  console.log('🎯 Featured Models:');
-  console.log('   • Best Quality: gpt-4 → DeepSeek V4 Pro (1M ctx)');
-  console.log('   • Balanced: gpt-4o → DeepSeek V4 Flash (fast MoE)');
-  console.log('   • Fastest: mistral-medium → Mistral Medium 3.5 (free)');
-  console.log('═══════════════════════════════════════════════════════');
+  console.log('ðŸŽ¯ Featured Models:');
+  console.log('   â€¢ Best Quality: gpt-4 â†’ DeepSeek V4 Pro (1M ctx)');
+  console.log('   â€¢ Balanced: gpt-4o â†’ DeepSeek V4 Flash (fast MoE)');
+  console.log('   â€¢ Fastest: mistral-medium â†’ Mistral Medium 3.5 (free)');
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
 });
