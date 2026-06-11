@@ -274,7 +274,7 @@ app.get('/v1/memory', (req, res) => {
 });
 
 app.delete('/v1/memory', (req, res) => {
-  const count = Object.keys(memoryStore).length '`';
+  const count = Object.keys(memoryStore).length;       // ✅ Correct
   for (const key in memoryStore) delete memoryStore[key];
   res.json({ message: `Cleared ${count} chat memories`, status: 'ok' });
 });
@@ -400,8 +400,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     finalMessages.push(...messagesToSend);
 
     const nimRequest = {
-      model  model,
-      messages: finalMessages,
+  model: nimModel,           // ✅ Correct
+  messages: finalMessages,
       temperature: temperature || 0.7,
       max_tokens: max_tokens || 12000,
       stream: stream || false
