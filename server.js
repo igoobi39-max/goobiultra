@@ -29,7 +29,7 @@ const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || fals
 const ENABLE_MEMORY = process.env.ENABLE_MEMORY !== 'false'; // On by default
 const SHORT_TERM_LIMIT = parseInt(process.env.SHORT_TERM_LIMIT) || 30; // Keep last N messages verbatim
 const SUMMARY_TRIGGER = parseInt(process.env.SUMMARY_TRIGGER) || 40; // Summarize when count exceeds this
-const SUMMARY_MODEL = process.env.SUMMARY_MODEL || 'mistralai/mistral-small-4-119b-2603'; // Fast model for summaries
+const SUMMARY_MODEL = process.env.SUMMARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl'; // Fast model for summaries
 const MEMORY_TTL = parseInt(process.env.MEMORY_TTL) || 86400000; // 24h — prune stale chats
 const MEMORY_CLEANUP_INTERVAL = parseInt(process.env.MEMORY_CLEANUP_INTERVAL) || 3600000; // Check every hour
 
