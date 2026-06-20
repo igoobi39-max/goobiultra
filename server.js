@@ -47,7 +47,7 @@ const MODEL_MAPPING = {
 
   // --- MiniMax (free endpoint) ---
   'minimax':    'minimaxai/minimax-m2.7',
-
+  'minimax2':    'minimaxai/minimax-m3',
   // --- Google ---
   'gemma':      'google/gemma-4-31b-it',
 
