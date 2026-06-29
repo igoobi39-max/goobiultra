@@ -16,7 +16,7 @@ const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.c
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
 // ðŸ”¥ REASONING DISPLAY TOGGLE - Shows/hides reasoning in output
-const SHOW_REASONING = process.env.SHOW_REASONING === 'true' || false;
+const SHOW_REASONING = process.env.SHOW_REASONING === 'false' || false;
 
 // ðŸ”¥ THINKING MODE TOGGLE - Enables thinking for specific models that support it
 const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || false;
