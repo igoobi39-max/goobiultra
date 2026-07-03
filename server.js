@@ -43,7 +43,7 @@ const MODEL_MAPPING = {
 
   // --- GLM (Z.ai, free endpoint) ---
   'glm-fast':   'z-ai/glm-4.7',
-  'glm-pro':    'z-ai/glm-5.1',
+  'glm-pro':    'z-ai/GLM-5.2',
 
   // --- MiniMax (free endpoint) ---
   'minimax':    'minimaxai/minimax-m2.7',
