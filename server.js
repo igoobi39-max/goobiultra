@@ -27,7 +27,7 @@ const MODEL_MAPPING = {
   'deepseek-v4-pro':   'deepseek-ai/deepseek-v4-pro',    // 1M ctx, flagship MoE
   'deepseek-v4-flash': 'deepseek-ai/deepseek-v4-flash',  // 1M ctx, fast 284B MoE
   'gpt-4':             'deepseek-ai/deepseek-v4-pro',
-  'gpt-4o':            'deepseek-ai/deepseek-v4-flash',
+  'gpt-4o':            'deepseek-ai/deepseek-v4-flash-0731',
 
   // --- NVIDIA Nemotron ---
   'gpt-3.5-turbo':  'nvidia/llama-3.1-nemotron-ultra-253b-v1',
