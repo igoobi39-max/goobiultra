@@ -30,8 +30,8 @@ const MODEL_MAPPING = {
   'gpt-4o':            'deepseek-ai/deepseek-v4-flash-0731',
 
   // --- NVIDIA Nemotron ---
-  'gpt-3.5-turbo':  'nvidia/llama-3.1-nemotron-ultra-253b-v1',
-  'gpt-4o-mini':    'nvidia/nemotron-3-super-120b-a12b',
+  'nvdU':  'nvidia/nemotron-3-ultra-550b-a55b',
+  'nvdS':    'nvidia/nemotron-3-super-120b-a12b',
 
   // --- Qwen ---
   'gpt-4-faster':  'qwen/qwen3.5-122b-a10b',
