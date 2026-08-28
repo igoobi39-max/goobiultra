@@ -49,7 +49,7 @@ const MODEL_MAPPING = {
   'minimax':    'minimaxai/minimax-m2.7',
   'minimax2':    'minimaxai/minimax-m3',
   // --- Google ---
-  'gemma':      'thinkingmachines/inkling',
+  'gemma':      'moonshotai/kimi-k3',
   'laguna':     'poolside/laguna-xs-2.1',
 
   // --- OpenAI OSS (via NIM) ---
