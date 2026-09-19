@@ -42,7 +42,7 @@ const MODEL_MAPPING = {
   'gemini-pro':      'mistralai/mistral-medium-3.5-128b',
 
   // --- GLM (Z.ai, free endpoint) ---
-  'glm-fast':   'z-ai/glm-4.7',
+  'glm-fast':   'z-ai/glm-5-3-flash',
   'glm':    'z-ai/glm-5.3',
 
   // --- MiniMax (free endpoint) ---
