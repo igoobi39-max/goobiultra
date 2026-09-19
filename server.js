@@ -19,7 +19,7 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 const SHOW_REASONING = process.env.SHOW_REASONING === 'true' || false;
 
 // ðŸ”¥ THINKING MODE TOGGLE - Enables thinking for specific models that support it
-const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true' || false;
+const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'false' || false;
 
 // ðŸŽ¯ MODEL MAPPING â€” verified against build.nvidia.com/models (May 2025)
 const MODEL_MAPPING = {
