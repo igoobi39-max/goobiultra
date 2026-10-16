@@ -32,7 +32,7 @@ const MODEL_MAPPING = {
   // --- NVIDIA Nemotron ---
   'nvdU':  'nvidia/nemotron-3-ultra-550b-a55b',
   'nvdS':    'nvidia/nemotron-3-super-120b-a12b',
-  'nvdT':      'nvidia/nemotron-3.5-super-vl-120b-a12b'
+  'nvdT':      'nvidia/nemotron-3.5-super-vl-120b-a12b',
 
   // --- Qwen ---
   'gpt-4-faster':  'qwen/qwen3.5-122b-a10b',
