@@ -35,7 +35,7 @@ const MODEL_MAPPING = {
   'nvdT':  'nvidia/nemotron-3.5-super-vl-120b-a12b',
 
   // --- Qwen ---
-  'gpt-4-faster':  'qwen/qwen3.5-122b-a10b',
+  'step':  'stepfun-ai/step-5-preview',
 
   // --- Mistral (free endpoints) ---
   'mistral-medium':  'mistralai/mistral-medium-3.5-128b',
