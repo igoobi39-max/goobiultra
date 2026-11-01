@@ -38,7 +38,7 @@ const MODEL_MAPPING = {
   'step':  'stepfun-ai/step-5-preview',
 
   // --- Mistral (free endpoints) ---
-  'mistral':  'mistralai/Mistral Large 4',
+  'mistral':  'mistralai/Mistral-Large-4',
   'mistral-small':   'mistralai/mistral-small-4-119b-2603',
   'gemini-pro':      'mistralai/mistral-medium-3.5-128b',
 
