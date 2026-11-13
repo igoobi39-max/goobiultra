@@ -112,7 +112,7 @@ const THINKING_MODELS = [
   'deepseek-ai/deepseek-v4-pro',
   'deepseek-ai/deepseek-v4-flash',
   'nvidia/llama-3.1-nemotron-ultra-253b-v1',
-  'nvidia/nemotron-3-super-120b-a12b',
+  'nvidia/nemotron-3-ultra-550b-a55b',
   'qwen/qwen3.5-122b-a10b',
   'mistralai/mistral-medium-3.5-128b',
   'mistralai/mistral-small-4-119b-2603',
